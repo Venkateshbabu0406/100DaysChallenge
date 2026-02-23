@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100 Day Transformation Tracker</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#1f4037,#99f2c8);
+  color: white;
+}
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+h1,h2,h3 {
+  text-align: center;
+}
+.card {
+  background: white;
+  color: black;
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+button {
+  background: #1f4037;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 16px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+input {
+  width: 100%;
+  padding: 6px;
+  margin: 4px 0;
+}
+.history-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.history-card {
+  background: #333;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.streak-box {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🔥 100 Day Transformation</h1>
+<div class="streak-box">Streak: <span id="streak">0</span> Days</div>
+<div id="currentDay"></div>
+<h2>Completed Days</h2>
+<div class="history-container" id="history"></div>
+</div>
+
+<script>
+let currentDay = localStorage.getItem("currentDay") ? parseInt(localStorage.getItem("currentDay")) : 1;
+let streak = localStorage.getItem("streak") ? parseInt(localStorage.getItem("streak")) : 0;
+let historyData = localStorage.getItem("history") ? JSON.parse(localStorage.getItem("history")) : [];
+document.getElementById("streak").innerText = streak;
+
+function getWorkout(day){
+  let type = day % 6;
+  if(type==1 || type==4) return "push";
+  if(type==2 || type==5) return "pull";
+  return "legs";
+}
+
+function renderDay(){
+  let type = getWorkout(currentDay);
+  let workoutHTML = "";
+  if(type=="push"){
+    workoutHTML=`
+      Chest (min 2)<input type="number" id="chest">
+      Shoulder (min 2)<input type="number" id="shoulder">
+      Tricep (min 2)<input type="number" id="tricep">
+    `;
+  }
+  if(type=="pull"){
+    workoutHTML=`
+      Back (min 3)<input type="number" id="back">
+      Bicep (min 3)<input type="number" id="bicep">
+    `;
+  }
+  if(type=="legs"){
+    workoutHTML=`
+      Legs (min 6)<input type="number" id="legs">
+    `;
+  }
+  document.getElementById("currentDay").innerHTML = `
+  <div class="card">
+    <h2>Day ${currentDay} (${type.toUpperCase()})</h2>
+    <h3>Gym</h3>
+    ${workoutHTML}
+    Abs (min 4)<input type="number" id="abs">
+    Warmup (min 30 min)<input type="number" id="warmup">
+    Cardio (min 30 min)<input type="number" id="cardio">
+    Steps (12000 Count)<input type="number" id="steps">
+
+    <h3>Nutrition</h3>
+    Calories (1800–2500)<input type="number" id="cal">
+    Protein (min 120g)<input type="number" id="pro">
+    Fat (max 60g)<input type="number" id="fat">
+    Sugar (max 50g)<input type="number" id="sugar">
+
+    <h3>Career</h3>
+    CCNA Topic (required)<input type="text" id="ccna">
+    <label><input type="checkbox" id="english"> English Practiced</label>
+
+    <h3>Weight</h3>
+    <input type="number" id="weight">
+
+    <button onclick="completeDay()">Submit Day</button>
+  </div>
+  `;
+}
+
+function completeDay(){
+  // strict previous days check
+  if(historyData.length !== currentDay - 1){
+    alert("❌ You missed a day! Restarting from Day 1 🔥");
+    localStorage.clear();
+    currentDay = 1;
+    streak = 0;
+    historyData = [];
+    document.getElementById("streak").innerText = streak;
+    renderDay();
+    renderHistory();
+    return;
+  }
+
+  let type = getWorkout(currentDay);
+  let errors = [];
+
+  let chestVal = parseInt(document.getElementById("chest")?.value || 0);
+  let shoulderVal = parseInt(document.getElementById("shoulder")?.value || 0);
+  let tricepVal = parseInt(document.getElementById("tricep")?.value || 0);
+  let backVal = parseInt(document.getElementById("back")?.value || 0);
+  let bicepVal = parseInt(document.getElementById("bicep")?.value || 0);
+  let legsVal = parseInt(document.getElementById("legs")?.value || 0);
+  let absVal = parseInt(document.getElementById("abs")?.value || 0);
+  let warmupVal = parseInt(document.getElementById("warmup")?.value || 0);
+  let cardioVal = parseInt(document.getElementById("cardio")?.value || 0);
+  let stepsVal = parseInt(document.getElementById("steps")?.value || 0);
+
+  let calVal = parseInt(document.getElementById("cal")?.value || 0);
+  let proVal = parseInt(document.getElementById("pro")?.value || 0);
+  let fatVal = parseInt(document.getElementById("fat")?.value || 0);
+  let sugarVal = parseInt(document.getElementById("sugar")?.value || 0);
+
+  let ccnaVal = document.getElementById("ccna")?.value || "";
+  let englishVal = document.getElementById("english")?.checked || false;
+  let weightVal = parseFloat(document.getElementById("weight")?.value || 0);
+
+  // Gym rules (>= min)
+  if(type=="push" && chestVal<2) errors.push("Chest min 2");
+  if(type=="push" && shoulderVal<2) errors.push("Shoulder min 2");
+  if(type=="push" && tricepVal<2) errors.push("Tricep min 2");
+
+  if(type=="pull" && backVal<3) errors.push("Back min 3");
+  if(type=="pull" && bicepVal<3) errors.push("Bicep min 3");
+
+  if(type=="legs" && legsVal<6) errors.push("Legs min 6");
+
+  if(absVal<4) errors.push("Abs min 4");
+  if(warmupVal<30) errors.push("Warmup min 30");
+  if(cardioVal<30) errors.push("Cardio min 30");
+  if(stepsVal<12000) errors.push("Steps min 12000");
+
+  // Nutrition
+  if(calVal<1800 || calVal>2500) errors.push("Calories 1800–2500");
+  if(proVal<120) errors.push("Protein min 120g");
+  if(fatVal>60) errors.push("Fat max 60g");
+  if(sugarVal>50) errors.push("Sugar max 50g");
+
+  // Career
+  if(ccnaVal.trim()==="") errors.push("CCNA topic required");
+  if(!englishVal) errors.push("English practice required");
+
+  if(errors.length>0){
+    alert("❌ Submission invalid! Restarting from Day 1 🔥\nFix these:\n- " + errors.join("\n- "));
+    localStorage.clear();
+    currentDay = 1;
+    streak = 0;
+    historyData = [];
+    document.getElementById("streak").innerText = streak;
+    renderDay();
+    renderHistory();
+    return;
+  }
+
+  let calPer = ((calVal/2000)*100).toFixed(0);
+
+  historyData.push({
+    day: currentDay,
+    workout: type,
+    chest: chestVal,
+    shoulder: shoulderVal,
+    tricep: tricepVal,
+    back: backVal,
+    bicep: bicepVal,
+    legs: legsVal,
+    abs: absVal,
+    warmup: warmupVal,
+    cardio: cardioVal,
+    steps: stepsVal,
+    calories: calVal,
+    calPer,
+    protein: proVal,
+    fat: fatVal,
+    sugar: sugarVal,
+    ccna: ccnaVal,
+    english: englishVal,
+    weight: weightVal
+  });
+
+  localStorage.setItem("history", JSON.stringify(historyData));
+  streak++;
+  currentDay++;
+  localStorage.setItem("streak", streak);
+  localStorage.setItem("currentDay", currentDay);
+  document.getElementById("streak").innerText = streak;
+
+  renderHistory();
+  renderDay();
+}
+
+function renderHistory(){
+  let div = document.getElementById("history");
+  div.innerHTML="";
+  historyData.forEach(d=>{
+    div.innerHTML += `
+      <div class="history-card">
+        <strong>Day ${d.day} ✔ (${d.workout.toUpperCase()})</strong><br>
+        Chest:${d.chest||0} Shoulder:${d.shoulder||0} Tricep:${d.tricep||0} Back:${d.back||0} Bicep:${d.bicep||0} Legs:${d.legs||0} Abs:${d.abs}<br>
+        Warmup:${d.warmup} min | Cardio:${d.cardio} min | Steps:${d.steps}<br>
+        Calories:${d.calories} (${d.calPer}%) | Protein:${d.protein} | Fat:${d.fat} | Sugar:${d.sugar}<br>
+        CCNA:${d.ccna} | English:${d.english?'✔':'✘'} | Weight:${d.weight}kg
+      </div>
+    `;
+  });
+}
+
+renderDay();
+renderHistory();
+</script>
+</body>
+</html>
