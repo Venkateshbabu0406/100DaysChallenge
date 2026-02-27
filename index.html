@@ -105,6 +105,7 @@ function renderDay(){
       Legs (min 6)<input type="number" id="legs">
     `;
   }
+
   document.getElementById("currentDay").innerHTML = `
   <div class="card">
     <h2>Day ${currentDay} (${type.toUpperCase()})</h2>
@@ -118,8 +119,9 @@ function renderDay(){
     <h3>Nutrition</h3>
     Calories (1800–2500)<input type="number" id="cal">
     Protein (min 120g)<input type="number" id="pro">
-    Fat (max 60g)<input type="number" id="fat">
-    Sugar (max 50g)<input type="number" id="sugar">
+    Carbs (min 150g)<input type="number" id="carbs">
+    Fat (max 65g)<input type="number" id="fat">
+    Sugar (max 65g)<input type="number" id="sugar">
 
     <h3>Career</h3>
     CCNA Topic (required)<input type="text" id="ccna">
@@ -134,7 +136,11 @@ function renderDay(){
 }
 
 function completeDay(){
-  // strict previous days check
+
+  if(!confirm("Are you sure you want to submit this day?")){
+    return;
+  }
+
   if(historyData.length !== currentDay - 1){
     alert("❌ You missed a day! Restarting from Day 1 🔥");
     localStorage.clear();
@@ -163,6 +169,7 @@ function completeDay(){
 
   let calVal = parseInt(document.getElementById("cal")?.value || 0);
   let proVal = parseInt(document.getElementById("pro")?.value || 0);
+  let carbsVal = parseInt(document.getElementById("carbs")?.value || 0);
   let fatVal = parseInt(document.getElementById("fat")?.value || 0);
   let sugarVal = parseInt(document.getElementById("sugar")?.value || 0);
 
@@ -170,7 +177,6 @@ function completeDay(){
   let englishVal = document.getElementById("english")?.checked || false;
   let weightVal = parseFloat(document.getElementById("weight")?.value || 0);
 
-  // Gym rules (>= min)
   if(type=="push" && chestVal<2) errors.push("Chest min 2");
   if(type=="push" && shoulderVal<2) errors.push("Shoulder min 2");
   if(type=="push" && tricepVal<2) errors.push("Tricep min 2");
@@ -185,13 +191,12 @@ function completeDay(){
   if(cardioVal<30) errors.push("Cardio min 30");
   if(stepsVal<12000) errors.push("Steps min 12000");
 
-  // Nutrition
   if(calVal<1800 || calVal>2500) errors.push("Calories 1800–2500");
   if(proVal<120) errors.push("Protein min 120g");
-  if(fatVal>60) errors.push("Fat max 60g");
-  if(sugarVal>50) errors.push("Sugar max 50g");
+  if(carbsVal<150) errors.push("Carbs min 150g");
+  if(fatVal>=65) errors.push("Fat must be less than 65g");
+  if(sugarVal>=65) errors.push("Sugar must be less than 65g");
 
-  // Career
   if(ccnaVal.trim()==="") errors.push("CCNA topic required");
   if(!englishVal) errors.push("English practice required");
 
@@ -225,6 +230,7 @@ function completeDay(){
     calories: calVal,
     calPer,
     protein: proVal,
+    carbs: carbsVal,
     fat: fatVal,
     sugar: sugarVal,
     ccna: ccnaVal,
@@ -252,7 +258,7 @@ function renderHistory(){
         <strong>Day ${d.day} ✔ (${d.workout.toUpperCase()})</strong><br>
         Chest:${d.chest||0} Shoulder:${d.shoulder||0} Tricep:${d.tricep||0} Back:${d.back||0} Bicep:${d.bicep||0} Legs:${d.legs||0} Abs:${d.abs}<br>
         Warmup:${d.warmup} min | Cardio:${d.cardio} min | Steps:${d.steps}<br>
-        Calories:${d.calories} (${d.calPer}%) | Protein:${d.protein} | Fat:${d.fat} | Sugar:${d.sugar}<br>
+        Calories:${d.calories} (${d.calPer}%) | Protein:${d.protein} | Carbs:${d.carbs} | Fat:${d.fat} | Sugar:${d.sugar}<br>
         CCNA:${d.ccna} | English:${d.english?'✔':'✘'} | Weight:${d.weight}kg
       </div>
     `;
